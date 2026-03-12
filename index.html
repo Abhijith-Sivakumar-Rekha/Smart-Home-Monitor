@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Home Environmental Monitor — Robotics Class</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal: #00C896;
+      --hot: #FF5533;
+      --indigo: #8888FF;
+      --amber: #FFB800;
+      --deep: #060A08;
+      --dark: #0A0F0C;
+      --panel: #0F1A14;
+      --text: #C8E8D8;
+      --muted: #5A7A68;
+      --white: #F0FDF6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--deep);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 999; opacity: 0.4;
+    }
+
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,150,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,150,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 3rem;
+      background: linear-gradient(to bottom, rgba(6,10,8,0.97), transparent);
+      backdrop-filter: blur(6px);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
+      letter-spacing: 0.18em; color: var(--teal);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .nav-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--teal); box-shadow: 0 0 8px var(--teal);
+      animation: blink 1.8s ease-in-out infinite;
+    }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      font-family: 'Space Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.12em; color: var(--muted);
+      text-decoration: none; text-transform: uppercase; transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--teal); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+      position: relative; z-index: 1; overflow: hidden;
+    }
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 9rem 3rem 7rem 4rem;
+    }
+    .hero-tag {
+      font-family: 'Space Mono', monospace; font-size: 0.65rem;
+      letter-spacing: 0.28em; color: var(--teal); text-transform: uppercase;
+      margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem;
+    }
+    .hero-tag::before { content: ''; width: 2rem; height: 1px; background: var(--teal); display: block; }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem, 9vw, 8rem);
+      line-height: 0.9; letter-spacing: 0.02em; color: var(--white); margin-bottom: 2rem;
+    }
+    h1 .accent { color: var(--teal); display: block; }
+    .hero-desc {
+      font-size: 1rem; line-height: 1.75; color: var(--muted);
+      max-width: 28rem; margin-bottom: 2.5rem;
+    }
+    .hero-chips { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 3rem; }
+    .chip {
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.1em; color: var(--teal);
+      border: 1px solid rgba(0,200,150,0.3); padding: 0.35rem 0.8rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .chip::before { content: '✓'; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.9rem 2rem; font-family: 'Space Mono', monospace;
+      font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+      text-decoration: none; border: none; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-primary { background: var(--teal); color: var(--deep); font-weight: 700; }
+    .btn-primary:hover { background: #00E0AA; transform: translateY(-2px); }
+
+    /* ORB */
+    .hero-right {
+      position: relative; display: flex; align-items: center; justify-content: center;
+    }
+    .orb-wrap {
+      position: relative; width: 460px; height: 460px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .orb-glow {
+      position: absolute; inset: -40px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,200,150,0.18) 0%, rgba(0,200,150,0.06) 40%, transparent 70%);
+      animation: pulse 5s ease-in-out infinite;
+    }
+    .orb-ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(0,200,150,0.12);
+      animation: spin linear infinite;
+    }
+    .orb-ring:nth-child(2) { inset: 0; animation-duration: 35s; }
+    .orb-ring:nth-child(3) { inset: -30px; animation-duration: 55s; animation-direction: reverse; border-style: dashed; }
+    .orb-ring:nth-child(4) { inset: -70px; animation-duration: 90s; }
+    .orb-card {
+      position: relative; z-index: 2;
+      background: #0B1410; border: 1px solid rgba(0,200,150,0.2);
+      border-radius: 10px; padding: 2rem 2.2rem; width: 300px;
+      box-shadow: 0 0 60px rgba(0,200,150,0.1), inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .lcd-screen {
+      background: #091A10; border: 1px solid #1A4030; border-radius: 4px;
+      padding: 1rem 1.2rem; font-family: 'Space Mono', monospace;
+      margin-bottom: 1.2rem; position: relative; overflow: hidden;
+    }
+    .lcd-screen::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,200,150,0.025) 3px, rgba(0,200,150,0.025) 6px);
+      pointer-events: none;
+    }
+    .lcd-row {
+      font-size: 0.82rem; letter-spacing: 0.08em; line-height: 2;
+      color: var(--teal); text-shadow: 0 0 8px rgba(0,200,150,0.5);
+    }
+    .lcd-row.status { font-weight: 700; text-align: center; letter-spacing: 0.15em; }
+    .lcd-row.s-perfect { color: #00C896; text-shadow: 0 0 10px rgba(0,200,150,0.9); }
+    .lcd-row.s-hot     { color: #FF5533; text-shadow: 0 0 10px rgba(255,85,51,0.9); }
+    .lcd-row.s-dark    { color: #8888FF; text-shadow: 0 0 10px rgba(136,136,255,0.9); }
+    .orb-leds { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .led {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #1A3A2A; border: 1px solid #2A5A3A; transition: all 0.4s;
+    }
+    .led.on      { background: #00C896; box-shadow: 0 0 6px #00C896; }
+    .led.hot-on  { background: #FF5533; box-shadow: 0 0 6px #FF5533; }
+    .led.dark-on { background: #8888FF; box-shadow: 0 0 6px #8888FF; }
+    .orb-label {
+      font-family: 'Space Mono', monospace; font-size: 0.55rem;
+      color: #2A4A38; letter-spacing: 0.15em; text-align: center; text-transform: uppercase;
+    }
+
+    /* STATS */
+    .stats-bar {
+      background: var(--panel);
+      border-top: 1px solid rgba(0,200,150,0.1);
+      border-bottom: 1px solid rgba(0,200,150,0.1);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      position: relative; z-index: 1;
+    }
+    .stat { padding: 2rem 2.5rem; border-right: 1px solid rgba(0,200,150,0.07); }
+    .stat:last-child { border-right: none; }
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem;
+      color: var(--teal); line-height: 1; margin-bottom: 0.3rem;
+    }
+    .stat-label {
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase;
+    }
+
+    /* SECTIONS */
+    section { padding: 7rem 4rem; position: relative; z-index: 1; }
+    .section-header { margin-bottom: 4rem; }
+    .section-tag {
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.3em; color: var(--teal); text-transform: uppercase;
+      display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;
+    }
+    .section-tag::after {
+      content: ''; flex: 1; height: 1px; background: rgba(0,200,150,0.2); max-width: 3rem;
+    }
+    h2 {
+      font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 4.5rem);
+      line-height: 1; color: var(--white); letter-spacing: 0.03em;
+    }
+
+    /* OVERVIEW */
+    .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: start; }
+    .overview-text p { font-size: 1rem; line-height: 1.8; color: var(--muted); margin-bottom: 1.5rem; }
+    .overview-diagram {
+      background: var(--panel); border: 1px solid rgba(0,200,150,0.12); padding: 2.5rem;
+    }
+    .diagram-title {
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 2rem;
+    }
+    .flow-item {
+      display: flex; align-items: center; gap: 1rem; padding: 1rem 0;
+      border-bottom: 1px solid rgba(0,200,150,0.07);
+    }
+    .flow-item:last-child { border-bottom: none; }
+    .flow-icon {
+      width: 2.5rem; height: 2.5rem; background: rgba(0,200,150,0.08);
+      border: 1px solid rgba(0,200,150,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .flow-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.05em; color: var(--white); }
+    .flow-sub { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--teal); letter-spacing: 0.1em; }
+    .flow-arrow {
+      font-family: 'Space Mono', monospace; font-size: 0.7rem;
+      color: rgba(0,200,150,0.3); text-align: center; padding: 0.3rem 0 0.3rem 3.5rem;
+    }
+
+    /* SENSOR CARDS */
+    .sensor-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: rgba(0,200,150,0.07); border: 1px solid rgba(0,200,150,0.07);
+    }
+    .sensor-card {
+      background: var(--deep); padding: 2.5rem;
+      position: relative; overflow: hidden; transition: background 0.3s;
+    }
+    .sensor-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--s-color, var(--teal)); opacity: 0.7;
+    }
+    .sensor-card:hover { background: var(--panel); }
+    .sensor-num {
+      font-family: 'Space Mono', monospace; font-size: 0.6rem;
+      color: var(--s-color, var(--teal)); letter-spacing: 0.2em; margin-bottom: 1.2rem;
+    }
+    .sensor-icon { font-size: 2.2rem; margin-bottom: 1rem; display: block; }
+    .sensor-name {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+      color: var(--white); letter-spacing: 0.05em; margin-bottom: 0.2rem;
+    }
+    .sensor-model {
+      font-family: 'Space Mono', monospace; font-size: 0.6rem;
+      color: var(--s-color, var(--teal)); letter-spacing: 0.12em; margin-bottom: 1rem;
+    }
+    .sensor-desc { font-size: 0.88rem; line-height: 1.7; color: var(--muted); margin-bottom: 1.5rem; }
+    .sensor-specs { display: flex; flex-direction: column; gap: 0.4rem; }
+    .spec {
+      font-family: 'Space Mono', monospace; font-size: 0.6rem;
+      color: var(--muted); letter-spacing: 0.06em; display: flex; gap: 0.5rem;
+    }
+    .spec::before { content: '—'; color: var(--s-color, var(--teal)); }
+
+    /* COMFORT METER */
+    #comfort { background: var(--panel); }
+    .comfort-intro {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; margin-bottom: 4rem;
+    }
+    .comfort-intro p { font-size: 1rem; line-height: 1.8; color: var(--muted); }
+    .comfort-live {
+      background: var(--deep); border: 1px solid rgba(0,200,150,0.15); padding: 2rem; border-radius: 6px;
+    }
+    .comfort-live-label {
+      font-family: 'Space Mono', monospace; font-size: 0.58rem;
+      color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase;
+      margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .comfort-live-label::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--teal); box-shadow: 0 0 6px var(--teal);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    .live-readings { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .reading {
+      background: var(--panel); border: 1px solid rgba(0,200,150,0.1); padding: 1rem; text-align: center;
+    }
+    .reading-val { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--teal); line-height: 1; margin-bottom: 0.2rem; }
+    .reading-unit { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+    .verdict-box {
+      text-align: center; padding: 1.2rem; border: 1px solid;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem;
+      letter-spacing: 0.2em; transition: all 0.4s;
+    }
+    .comfort-states { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .comfort-state {
+      padding: 2rem; border: 1px solid var(--s-color, rgba(255,255,255,0.08));
+      position: relative; transition: background 0.3s;
+    }
+    .comfort-state:hover { background: rgba(0,200,150,0.03); }
+    .comfort-state::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%; background: var(--s-color, #888);
+    }
+    .state-emoji { font-size: 2rem; margin-bottom: 1rem; display: block; }
+    .state-label {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem;
+      letter-spacing: 0.06em; color: var(--s-color, var(--white)); margin-bottom: 0.5rem;
+    }
+    .state-condition {
+      font-family: 'Space Mono', monospace; font-size: 0.6rem;
+      color: var(--muted); letter-spacing: 0.08em; margin-bottom: 1rem;
+      padding: 0.4rem 0.6rem; background: rgba(0,200,150,0.05);
+      border-left: 2px solid var(--s-color, var(--teal));
+    }
+    .state-desc { font-size: 0.85rem; line-height: 1.65; color: var(--muted); }
+
+    /* HOW IT WORKS */
+    .how-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 1px; background: rgba(0,200,150,0.07); border: 1px solid rgba(0,200,150,0.07);
+    }
+    .how-item { background: var(--deep); padding: 2.5rem; transition: background 0.3s; }
+    .how-item:hover { background: var(--panel); }
+    .how-step { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--teal); letter-spacing: 0.2em; margin-bottom: 1rem; }
+    .how-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--white); letter-spacing: 0.04em; margin-bottom: 0.8rem; }
+    .how-desc { font-size: 0.88rem; line-height: 1.7; color: var(--muted); }
+
+    /* FOOTER */
+    footer {
+      background: var(--dark); border-top: 1px solid rgba(0,200,150,0.1);
+      padding: 3rem 4rem; display: flex; justify-content: space-between; align-items: center;
+      position: relative; z-index: 1;
+    }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem;
+      color: var(--teal); letter-spacing: 0.12em; display: flex; align-items: center; gap: 0.6rem;
+    }
+    .footer-info {
+      font-family: 'Space Mono', monospace; font-size: 0.62rem;
+      color: var(--muted); letter-spacing: 0.1em; text-align: right; line-height: 1.9;
+    }
+    .footer-info a { color: var(--teal); text-decoration: none; }
+    .footer-info a:hover { color: #00E0AA; }
+
+    /* ANIMATIONS */
+    @keyframes pulse  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+    @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0.15} }
+    @keyframes fadeUp { to{opacity:1;transform:translateY(0)} }
+
+    .fade-up { opacity:0; transform:translateY(28px); animation:fadeUp 0.8s ease forwards; }
+    .d1 { animation-delay: 0.1s; }
+    .d2 { animation-delay: 0.25s; }
+    .d3 { animation-delay: 0.4s; }
+    .d4 { animation-delay: 0.55s; }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 5rem; }
+      .hero-right { height: 55vw; }
+      .orb-wrap { width: 260px; height: 260px; }
+      .orb-card { width: 200px; padding: 1.2rem 1.4rem; }
+      .orb-card .lcd-row { font-size: 0.65rem; }
+      .overview-grid, .comfort-intro { grid-template-columns: 1fr; gap: 3rem; }
+      .sensor-cards, .how-grid { grid-template-columns: 1fr; }
+      .comfort-states { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+      .stat { border-right: none; border-bottom: 1px solid rgba(0,200,150,0.07); }
+      nav { padding: 1rem 1.5rem; }
+      section { padding: 5rem 1.5rem; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .footer-info { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-logo"><div class="nav-dot"></div>ENV MONITOR</div>
+    <ul class="nav-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#sensors">Sensors</a></li>
+      <li><a href="#comfort">Comfort Meter</a></li>
+      <li><a href="#how">How It Works</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-tag fade-up">Robotics Class — Environmental Monitor</div>
+      <h1 class="fade-up d1">Smart Home<span class="accent">Monitor</span></h1>
+      <p class="hero-desc fade-up d2">
+        A room-aware sensor station that reads temperature, humidity, and light intensity in real time — displaying live conditions and a comfort verdict on an I2C 1602 LCD display.
+      </p>
+      <div class="hero-chips fade-up d3">
+        <span class="chip">DHT11 Sensor</span>
+        <span class="chip">BH1750 Light Module</span>
+        <span class="chip">I2C 1602 LCD</span>
+      </div>
+      <div class="fade-up d4">
+        <a href="#sensors" class="btn btn-primary">Explore Project ↓</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="orb-wrap fade-up d2">
+        <div class="orb-glow"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-card">
+          <div class="lcd-screen">
+            <div class="lcd-row">TEMP:<span id="h-temp">24.6</span>°C RH:<span id="h-hum">58</span>%</div>
+            <div class="lcd-row status s-perfect" id="h-status">★ PERFECT ★</div>
+          </div>
+          <div class="lcd-screen" style="margin-bottom:1.2rem;">
+            <div class="lcd-row">LUX: <span id="h-lux">420</span> lx</div>
+            <div class="lcd-row" style="color:#8888FF;text-shadow:0 0 8px rgba(136,136,255,0.5);">LIGHT: <span id="h-light">GOOD</span></div>
+          </div>
+          <div class="orb-leds" id="h-leds">
+            <div class="led on"></div><div class="led on"></div><div class="led on"></div>
+            <div class="led"></div><div class="led"></div>
+          </div>
+          <div class="orb-label">I2C 1602 — Live Sim</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-value">3</div><div class="stat-label">Sensors / Modules</div></div>
+    <div class="stat"><div class="stat-value">2</div><div class="stat-label">Sub-Projects</div></div>
+    <div class="stat"><div class="stat-value">3</div><div class="stat-label">Comfort States</div></div>
+    <div class="stat"><div class="stat-value">I²C</div><div class="stat-label">Protocol Used</div></div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="section-header">
+      <div class="section-tag">01 — Overview</div>
+      <h2>What This Project Does</h2>
+    </div>
+    <div class="overview-grid">
+      <div class="overview-text">
+        <p>This project turns a microcontroller into an intelligent environmental station for any room. Using the DHT11 sensor and BH1750 light module, it continuously measures temperature, humidity, and ambient light — combining all readings into a single "Comfort Score" displayed on a 16×2 LCD.</p>
+        <p>Two sub-projects stack together: a <strong style="color:var(--white)">Temperature &amp; Humidity Station</strong> powered by the DHT11, and a <strong style="color:var(--white)">Light Intensity Meter</strong> using the BH1750. Both feed into the Comfort Meter, which outputs a human-readable verdict every second.</p>
+        <p>The I²C bus keeps wiring clean — the LCD and BH1750 share the same two-wire SDA/SCL line, minimizing connections and making the circuit easy to debug.</p>
+      </div>
+      <div class="overview-diagram">
+        <div class="diagram-title">System Data Flow</div>
+        <div class="flow-item">
+          <div class="flow-icon">🌡</div>
+          <div><div class="flow-name">DHT11</div><div class="flow-sub">Temperature + Humidity → Digital Pin</div></div>
+        </div>
+        <div class="flow-arrow">↓ single-wire data</div>
+        <div class="flow-item">
+          <div class="flow-icon">☀</div>
+          <div><div class="flow-name">BH1750</div><div class="flow-sub">Light Intensity → I²C Bus</div></div>
+        </div>
+        <div class="flow-arrow">↓ I²C (SDA / SCL)</div>
+        <div class="flow-item">
+          <div class="flow-icon">🧠</div>
+          <div><div class="flow-name">Microcontroller</div><div class="flow-sub">Process + Apply Comfort Thresholds</div></div>
+        </div>
+        <div class="flow-arrow">↓ I²C (shared bus)</div>
+        <div class="flow-item">
+          <div class="flow-icon">📟</div>
+          <div><div class="flow-name">I2C 1602 LCD</div><div class="flow-sub">Display Readings + Comfort Verdict</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SENSORS -->
+  <section id="sensors">
+    <div class="section-header">
+      <div class="section-tag">02 — Hardware</div>
+      <h2>Sensors & Modules</h2>
+    </div>
+    <div class="sensor-cards">
+      <div class="sensor-card" style="--s-color:#FFB800;">
+        <div class="sensor-num">01 — TEMPERATURE & HUMIDITY</div>
+        <span class="sensor-icon">🌡</span>
+        <div class="sensor-name">DHT11</div>
+        <div class="sensor-model">Digital Humidity & Temperature Sensor</div>
+        <div class="sensor-desc">Reads ambient temperature and relative humidity via a calibrated digital signal. Single-wire protocol means minimal wiring — just one data pin plus power and ground.</div>
+        <div class="sensor-specs">
+          <span class="spec">Temperature: 0–50 °C (±2°C accuracy)</span>
+          <span class="spec">Humidity: 20–90% RH (±5% accuracy)</span>
+          <span class="spec">Sampling rate: 1 Hz (once per second)</span>
+          <span class="spec">Interface: Single-wire digital</span>
+        </div>
+      </div>
+      <div class="sensor-card" style="--s-color:#00C896;">
+        <div class="sensor-num">02 — LIGHT INTENSITY</div>
+        <span class="sensor-icon">☀</span>
+        <div class="sensor-name">BH1750</div>
+        <div class="sensor-model">Digital Light Intensity Module</div>
+        <div class="sensor-desc">Measures ambient light precisely in Lux — the same unit used in professional lighting design. Communicates over I²C, sharing the bus with the LCD for a clean 4-wire setup.</div>
+        <div class="sensor-specs">
+          <span class="spec">Range: 1–65,535 lx</span>
+          <span class="spec">Resolution: 1 lx</span>
+          <span class="spec">Interface: I²C (address 0x23 or 0x5C)</span>
+          <span class="spec">No ADC converter needed</span>
+        </div>
+      </div>
+      <div class="sensor-card" style="--s-color:#8888FF;">
+        <div class="sensor-num">03 — DISPLAY</div>
+        <span class="sensor-icon">📟</span>
+        <div class="sensor-name">I2C 1602 LCD</div>
+        <div class="sensor-model">16×2 Character LCD with I²C Backpack</div>
+        <div class="sensor-desc">Standard 16×2 LCD fitted with an I²C backpack. Reduces wiring from 8 pins down to 4 (VCC, GND, SDA, SCL) while sharing the same bus as the BH1750.</div>
+        <div class="sensor-specs">
+          <span class="spec">Display: 16 × 2 characters</span>
+          <span class="spec">Interface: I²C via PCF8574 expander</span>
+          <span class="spec">Default address: 0x27</span>
+          <span class="spec">Adjustable contrast via onboard pot</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMFORT METER -->
+  <section id="comfort">
+    <div class="section-header">
+      <div class="section-tag">03 — Project Idea</div>
+      <h2>The Comfort Meter</h2>
+    </div>
+    <div class="comfort-intro">
+      <div>
+        <p>The Comfort Meter combines all three sensor readings into one clear verdict, printed on the second row of the LCD. Every second, the microcontroller checks current conditions against preset thresholds and updates the display.</p>
+        <p style="margin-top:1.2rem;">If temperature or humidity exceeds comfort limits, it shows <strong style="color:#FF5533;">⚠ TOO HOT</strong>. If light falls below the healthy working level, it shows <strong style="color:#8888FF;">◑ TOO DARK</strong>. Otherwise all conditions pass and it shows <strong style="color:#00C896;">★ PERFECT</strong>.</p>
+      </div>
+      <div class="comfort-live">
+        <div class="comfort-live-label">Live Simulation</div>
+        <div class="live-readings">
+          <div class="reading"><div class="reading-val" id="c-temp">24.6</div><div class="reading-unit">°C Temp</div></div>
+          <div class="reading"><div class="reading-val" id="c-hum">58</div><div class="reading-unit">% RH Hum</div></div>
+          <div class="reading"><div class="reading-val" id="c-lux" style="font-size:1.4rem;">420</div><div class="reading-unit">lx Light</div></div>
+        </div>
+        <div class="verdict-box" id="c-verdict" style="border-color:#00C896;color:#00C896;text-shadow:0 0 12px rgba(0,200,150,0.6);">★ PERFECT ★</div>
+      </div>
+    </div>
+    <div class="comfort-states">
+      <div class="comfort-state" style="--s-color:#00C896;">
+        <span class="state-emoji">★</span>
+        <div class="state-label">Perfect</div>
+        <div class="state-condition">18–26°C · 40–70% RH · &gt; 300 lx</div>
+        <div class="state-desc">All three readings are within comfortable limits. Temperature, humidity, and light are all ideal — the LCD confirms with a ★ PERFECT ★ message.</div>
+      </div>
+      <div class="comfort-state" style="--s-color:#FF5533;">
+        <span class="state-emoji">🔥</span>
+        <div class="state-label">Too Hot</div>
+        <div class="state-condition">Temp &gt; 26°C  or  RH &gt; 70%</div>
+        <div class="state-desc">Temperature or humidity exceeds the comfort threshold. The LCD alerts with ⚠ TOO HOT — open a window, run a fan, or check ventilation in the room.</div>
+      </div>
+      <div class="comfort-state" style="--s-color:#8888FF;">
+        <span class="state-emoji">🌑</span>
+        <div class="state-label">Too Dark</div>
+        <div class="state-condition">Light &lt; 300 lx</div>
+        <div class="state-desc">Ambient light is below a healthy level for reading and focused work. The LCD shows ◑ TOO DARK as a prompt to switch on a light before eye strain sets in.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="section-header">
+      <div class="section-tag">04 — Implementation</div>
+      <h2>How It Works</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-item">
+        <div class="how-step">STEP 01</div>
+        <div class="how-title">Read DHT11</div>
+        <div class="how-desc">The microcontroller sends a start signal on the DHT11 data pin. The sensor responds with a 40-bit packet containing temperature and humidity, decoded and stored each cycle.</div>
+      </div>
+      <div class="how-item">
+        <div class="how-step">STEP 02</div>
+        <div class="how-title">Read BH1750 via I²C</div>
+        <div class="how-desc">A measurement request is sent to the BH1750 over I²C. The sensor returns a 16-bit integer in raw counts, which is divided by 1.2 to produce the final Lux reading.</div>
+      </div>
+      <div class="how-item">
+        <div class="how-step">STEP 03</div>
+        <div class="how-title">Apply Comfort Logic</div>
+        <div class="how-desc">All three values are checked against threshold constants in code. A priority check runs: Too Hot takes precedence over Too Dark. If neither triggers, the verdict is Perfect.</div>
+      </div>
+      <div class="how-item">
+        <div class="how-step">STEP 04</div>
+        <div class="how-title">Update the LCD</div>
+        <div class="how-desc">The LCD is cleared and rewritten every second. Row 1 shows temperature, humidity, and Lux values. Row 2 shows the Comfort Meter verdict — ★ PERFECT, ⚠ TOO HOT, or ◑ TOO DARK.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo"><span>◉</span> ENV MONITOR</div>
+    <div class="footer-info">
+      Robotics Class — Abhijith Sivakumar-Rekha<br/>
+      <a href="https://github.com/Abhijith-Sivakumar-Rekha/Solar-Project" target="_blank">github.com/Abhijith-Sivakumar-Rekha/Solar-Project</a>
+    </div>
+  </footer>
+
+<script>
+  const states = [
+    { temp:'24.6', hum:'58',  lux:'420', light:'GOOD', status:'★  PERFECT  ★',  cls:'s-perfect', vc:'#00C896', vg:'rgba(0,200,150,0.6)',    led:'on'    },
+    { temp:'29.3', hum:'75',  lux:'390', light:'GOOD', status:'⚠  TOO HOT  ⚠', cls:'s-hot',     vc:'#FF5533', vg:'rgba(255,85,51,0.6)',    led:'hot-on' },
+    { temp:'21.8', hum:'44',  lux:'85',  light:'LOW',  status:'◑  TOO DARK  ◑', cls:'s-dark',    vc:'#8888FF', vg:'rgba(136,136,255,0.6)',  led:'dark-on'},
+    { temp:'23.1', hum:'52',  lux:'512', light:'GOOD', status:'★  PERFECT  ★',  cls:'s-perfect', vc:'#00C896', vg:'rgba(0,200,150,0.6)',    led:'on'    },
+  ];
+  let idx = 0;
+  function update() {
+    const s = states[idx % states.length];
+    document.getElementById('h-temp').textContent  = s.temp;
+    document.getElementById('h-hum').textContent   = s.hum;
+    document.getElementById('h-lux').textContent   = s.lux;
+    document.getElementById('h-light').textContent = s.light;
+    const hs = document.getElementById('h-status');
+    hs.textContent = s.status; hs.className = 'lcd-row status ' + s.cls;
+    const leds = document.querySelectorAll('#h-leds .led');
+    leds.forEach(l => l.className = 'led');
+    const map = { 'on':[0,1,2], 'hot-on':[0,1], 'dark-on':[0,1,2,3] };
+    (map[s.led]||[]).forEach(i => leds[i].classList.add(s.led));
+    document.getElementById('c-temp').textContent = s.temp;
+    document.getElementById('c-hum').textContent  = s.hum;
+    document.getElementById('c-lux').textContent  = s.lux;
+    const cv = document.getElementById('c-verdict');
+    cv.textContent = s.status;
+    cv.style.borderColor = s.vc; cv.style.color = s.vc;
+    cv.style.textShadow = `0 0 14px ${s.vg}`;
+    idx++;
+  }
+  setInterval(update, 3000);
+</script>
+</body>
+</html>

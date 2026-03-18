@@ -31,7 +31,6 @@
     overflow-x: hidden;
   }
 
-  /* ── GRID BACKGROUND ── */
   body::before {
     content: '';
     position: fixed;
@@ -44,7 +43,6 @@
     z-index: 0;
   }
 
-  /* ── NAV ── */
   nav {
     position: sticky;
     top: 0;
@@ -87,7 +85,6 @@
   }
   .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
-  /* ── HERO ── */
   .hero {
     position: relative;
     z-index: 1;
@@ -145,9 +142,7 @@
     flex-wrap: wrap;
   }
 
-  .stat {
-    text-align: center;
-  }
+  .stat { text-align: center; }
   .stat-num {
     font-family: var(--mono);
     font-size: 28px;
@@ -164,7 +159,6 @@
     margin-top: 4px;
   }
 
-  /* ── GRID ── */
   .grid-section {
     position: relative;
     z-index: 1;
@@ -197,7 +191,6 @@
     gap: 20px;
   }
 
-  /* ── PROJECT CARD ── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -300,13 +293,12 @@
     text-transform: uppercase;
   }
 
-  /* ── EXPAND PANEL ── */
   .card-expand {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.4s ease;
   }
-  .card.open .card-expand { max-height: 400px; }
+  .card.open .card-expand { max-height: 600px; }
 
   .card-expand-inner {
     padding: 0 24px 24px;
@@ -384,7 +376,51 @@
     animation: pulse 2s ease-in-out infinite;
   }
 
-  /* ── FOOTER ── */
+  .wokwi-embed-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .wokwi-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  .wokwi-frame-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, #00d4ff 30%, transparent);
+    background: #000;
+  }
+
+  .wokwi-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: #00d4ff;
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: gap 0.2s;
+  }
+  .wokwi-link:hover { gap: 10px; }
+
   footer {
     position: relative;
     z-index: 1;
@@ -393,7 +429,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: gap;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .footer-left {
@@ -403,10 +440,7 @@
   }
   .footer-left span { color: var(--accent); }
 
-  /* ── ANIMATIONS ── */
-  .card {
-    animation: fadeUp 0.5s ease both;
-  }
+  .card { animation: fadeUp 0.5s ease both; }
   .card:nth-child(1) { animation-delay: 0.05s; }
   .card:nth-child(2) { animation-delay: 0.1s; }
   .card:nth-child(3) { animation-delay: 0.15s; }
@@ -421,7 +455,6 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* responsive */
   @media (max-width: 600px) {
     .nav-links { display: none; }
     .hero-stats { gap: 28px; }
@@ -431,7 +464,6 @@
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <a href="index.html" class="nav-logo">ENV MONITOR</a>
   <ul class="nav-links">
@@ -442,7 +474,6 @@
   </ul>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-tag">Robotics Class — Task Series</div>
   <h1>Mini <span>Projects</span></h1>
@@ -456,7 +487,6 @@
   </div>
 </section>
 
-<!-- GRID -->
 <section class="grid-section">
   <div class="section-label">All Tasks</div>
   <div class="projects-grid" id="grid"></div>
@@ -481,7 +511,8 @@ const projects = [
       "Server rack status panel: green = OK, amber = warn, red = fault",
       "Plant watering indicator: blue LED pulses when soil is dry",
       "Staircase emergency exit lighting triggered by power failure"
-    ]
+    ],
+    wokwi: "https://wokwi.com/projects/458827337398061057"
   },
   {
     num: "02",
@@ -612,6 +643,27 @@ projects.forEach(p => {
         ${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}
       </div>
     </div>
+    ${p.wokwi ? `
+    <div class="card-body" style="padding-top:0">
+      <div class="wokwi-embed-label">
+        <span class="wokwi-live-dot"></span>
+        Live Simulator
+      </div>
+      <div class="wokwi-frame-wrap">
+        <iframe
+          src="${p.wokwi}"
+          width="100%"
+          height="380"
+          style="border:none;display:block;"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+      </div>
+      <a href="${p.wokwi}" target="_blank" class="wokwi-link">
+        ▶ Open full project in Wokwi
+      </a>
+    </div>
+    ` : ''}
     <div class="card-footer">
       <button class="expand-btn" onclick="toggleCard(this)">
         <span class="arrow">▶</span> View Ideas
@@ -634,7 +686,6 @@ projects.forEach(p => {
 function toggleCard(btn) {
   const card = btn.closest('.card');
   const wasOpen = card.classList.contains('open');
-  // close all
   document.querySelectorAll('.card.open').forEach(c => c.classList.remove('open'));
   if (!wasOpen) card.classList.add('open');
 }
